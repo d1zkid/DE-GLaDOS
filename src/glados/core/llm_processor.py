@@ -318,25 +318,14 @@ class LanguageModelProcessor:
         wants_system = any(
             keyword in text
             for keyword in (
-                "system",
-                "status",
-                "cpu",
-                "memory",
-                "ram",
-                "disk",
-                "storage",
-                "network",
-                "ip",
-                "uptime",
-                "temperature",
-                "temp",
-                "process",
-                "battery",
-                "power",
-                "load",
+                "system", "status", "cpu", "memory", "speicher", "ram", "disk", 
+                "festplatte", "storage", "speicherplatz", "network", "netzwerk", 
+                "ip", "uptime", "laufzeit", "temperature", "temperatur", "temp", 
+                "process", "prozess", "battery", "batterie", "akku", "power", 
+                "strom", "load", "auslastung"
             )
         )
-        wants_clap = "clap" in text
+        wants_clap = any(k in text for k in ("clap", "klatschen", "applaus", "beifall"))
         filtered: list[dict[str, Any]] = []
         for tool in tools:
             name = tool.get("function", {}).get("name", "")
@@ -792,21 +781,20 @@ class LanguageModelProcessor:
                                 )
                                 continue
                             raise
-
                 except requests.exceptions.ConnectionError as e:
                     logger.error(f"LLM Processor: Connection error to LLM service: {e}")
                     self.tts_input_queue.put(
-                        "I'm unable to connect to my thinking module. Please check the LLM service connection."
+                        "Ich kann keine Verbindung zu meinem Denkmodul herstellen. Bitte überprüfe die Verbindung zum LLM-Dienst."
                     )
                 except requests.exceptions.Timeout as e:
                     logger.error(f"LLM Processor: Request to LLM timed out: {e}")
-                    self.tts_input_queue.put("My brain seems to be taking too long to respond. It might be overloaded.")
+                    self.tts_input_queue.put("Mein Gehirn scheint zu lange für eine Antwort zu brauchen. Es ist möglicherweise überlastet.")
                 except requests.exceptions.HTTPError as e:
                     if http_error_detail:
                         status_code, detail = http_error_detail
                         logger.error(f"LLM Processor: HTTP error {status_code} from LLM service: {detail}")
                         self.tts_input_queue.put(
-                            f"I received an error from my thinking module. HTTP status {status_code}."
+                            f"Ich habe einen Fehler von meinem Denkmodul erhalten. HTTP-Status {status_code}."
                         )
                     else:
                         status_code = (
@@ -816,14 +804,14 @@ class LanguageModelProcessor:
                         )
                         logger.error(f"LLM Processor: HTTP error {status_code} from LLM service: {e}")
                         self.tts_input_queue.put(
-                            f"I received an error from my thinking module. HTTP status {status_code}."
+                            f"Ich habe einen Fehler von meinem Denkmodul erhalten. HTTP-Status {status_code}."
                         )
                 except requests.exceptions.RequestException as e:
                     logger.error(f"LLM Processor: Request to LLM failed: {e}")
-                    self.tts_input_queue.put("Sorry, I encountered an error trying to reach my brain.")
+                    self.tts_input_queue.put("Es tut mir leid, beim Versuch, mein Gehirn zu erreichen, ist ein Fehler aufgetreten.")
                 except Exception as e:
                     logger.exception(f"LLM Processor: Unexpected error during LLM request/streaming: {e}")
-                    self.tts_input_queue.put("I'm having a little trouble thinking right now.")
+                    self.tts_input_queue.put("Ich habe gerade ein paar Schwierigkeiten beim Nachdenken.")
                 finally:
                     if self.processing_active_event.is_set():  # Only send EOS if not interrupted
                         logger.debug("LLM Processor: Sending EOS token to TTS queue.")

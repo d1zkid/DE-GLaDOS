@@ -11,13 +11,13 @@ mcp = FastMCP("slow_clap_demo")
 
 @mcp.tool()
 def slow_clap(claps: int = 1) -> str:
-    """Return a slow clap response for demo purposes."""
+    """Gibt eine langsame Beifallsreaktion zu Demonstrationszwecken zurück."""
     try:
         claps = int(claps)
     except (TypeError, ValueError):
         claps = 1
     claps = max(1, min(claps, 5))
-    return " ".join(["clap"] * claps)
+    return " ".join(["klatschen"] * claps)
 
 
 def main() -> None:

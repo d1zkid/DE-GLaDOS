@@ -5,7 +5,7 @@ tool_definition = {
     "type": "function",
     "function": {
         "name": "do_nothing",
-        "description": "Explicitly do nothing.",
+        "description": "Explizit nichts tun.",
         "parameters": {"type": "object", "properties": {}},
     },
 }

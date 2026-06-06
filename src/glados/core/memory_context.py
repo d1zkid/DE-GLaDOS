@@ -132,7 +132,7 @@ class MemoryContext:
         if not facts:
             return None
 
-        lines = ["[memory] Important facts I remember:"]
+        lines = ["[gedächtnis] Wichtige Fakten, die ich mir gemerkt habe:"]
         for fact in facts:
             lines.append(self.format_fact(fact))
 

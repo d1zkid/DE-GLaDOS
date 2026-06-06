@@ -42,10 +42,10 @@ def _read_supply(path: Path) -> dict[str, Any]:
 
 @mcp.tool()
 def batteries() -> str:
-    """Return battery information from /sys/class/power_supply."""
+    """Gibt Akkuinformationen aus /sys/class/power_supply zurück."""
     root = Path("/sys/class/power_supply")
     if not root.exists():
-        return json.dumps({"error": "power_supply unavailable"})
+        return json.dumps({"error": "Stromversorgungsinformationen nicht verfügbar"})
     entries = [_read_supply(path) for path in root.iterdir() if path.is_dir()]
     batteries_only = [entry for entry in entries if entry.get("type") == "Battery"]
     return json.dumps({"batteries": batteries_only})

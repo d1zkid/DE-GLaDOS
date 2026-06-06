@@ -5,13 +5,13 @@ tool_definition = {
     "type": "function",
     "function": {
         "name": "get_report",
-        "description": "Get detailed report from a subagent. Use when the summary in context isn't enough and you need more details.",
+        "description": "Detaillierten Bericht von einem Subagenten abrufen. Verwenden, wenn die Zusammenfassung im Kontext nicht ausreicht und mehr Details benötigt werden.",
         "parameters": {
             "type": "object",
             "properties": {
                 "agent_id": {
                     "type": "string",
-                    "description": "ID of the subagent (e.g., 'weather', 'hn_top', 'emotion')",
+                    "description": "ID des Subagenten (z. B. 'weather', 'hn_top', 'emotion')",
                 }
             },
             "required": ["agent_id"],
@@ -34,17 +34,17 @@ class GetReport:
         slot_store = self.tool_config.get("slot_store")
 
         if not slot_store:
-            content = "Error: slot_store not available"
+            content = "Fehler: slot_store nicht verfügbar"
         elif not agent_id:
-            content = "Error: agent_id is required"
+            content = "Fehler: agent_id ist erforderlich"
         else:
             slot = slot_store.get_slot(agent_id)
             if slot is None:
-                content = f"No slot found for agent '{agent_id}'"
+                content = f"Kein Slot für Agenten '{agent_id}' gefunden"
             elif slot.report:
                 content = slot.report
             else:
-                content = f"No detailed report available for '{agent_id}'. Summary: {slot.summary}"
+                content = f"Kein detaillierter Bericht für '{agent_id}' verfügbar. Zusammenfassung: {slot.summary}"
 
         self.llm_queue.put(
             {

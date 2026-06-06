@@ -1,8 +1,8 @@
 """
-Long-term memory MCP server for GLaDOS.
+Langzeitgedächtnis-MCP-Server für GLaDOS.
 
-Provides tools for storing and retrieving facts and summaries.
-Uses LLM for semantic search ranking (LLM-first principle).
+Stellt Werkzeuge zum Speichern und Abrufen von Fakten und Zusammenfassungen bereit.
+Verwendet das LLM für semantisches Such-Ranking (LLM-first-Prinzip).
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ logging.getLogger().setLevel(logging.CRITICAL)
 
 mcp = FastMCP("memory")
 
-# Storage paths
+# Speicherpfade
 MEMORY_DIR = Path(os.path.expanduser("~/.glados/memory"))
 FACTS_FILE = MEMORY_DIR / "facts.jsonl"
 SUMMARIES_FILE = MEMORY_DIR / "summaries.jsonl"
@@ -32,7 +32,7 @@ SUMMARIES_FILE = MEMORY_DIR / "summaries.jsonl"
 
 @dataclass
 class Fact:
-    """A stored fact with metadata."""
+    """Ein gespeicherter Fakt mit Metadaten."""
 
     content: str
     source: str
@@ -50,12 +50,12 @@ class Fact:
 
 @dataclass
 class Summary:
-    """A stored conversation summary."""
+    """Eine gespeicherte Gesprächszusammenfassung."""
 
     content: str
     period: str  # "daily", "weekly", "session"
-    start_time: str  # ISO format
-    end_time: str  # ISO format
+    start_time: str  # ISO-Format
+    end_time: str  # ISO-Format
     created_at: float = field(default_factory=time.time)
     id: str = field(default_factory=lambda: f"summary_{int(time.time() * 1000)}")
 
@@ -68,12 +68,12 @@ class Summary:
 
 
 def _ensure_storage() -> None:
-    """Ensure storage directory exists."""
+    """Stellt sicher, dass das Speicherverzeichnis existiert."""
     MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _load_facts() -> list[Fact]:
-    """Load all facts from storage."""
+    """Lädt alle gespeicherten Fakten."""
     if not FACTS_FILE.exists():
         return []
     facts = []
@@ -84,19 +84,19 @@ def _load_facts() -> list[Fact]:
                 if line:
                     facts.append(Fact.from_dict(json.loads(line)))
     except (json.JSONDecodeError, OSError) as e:
-        logger.warning(f"Failed to load facts: {e}")
+        logger.warning(f"Fakten konnten nicht geladen werden: {e}")
     return facts
 
 
 def _save_fact(fact: Fact) -> None:
-    """Append a fact to storage."""
+    """Hängt einen Fakt an den Speicher an."""
     _ensure_storage()
     with FACTS_FILE.open("a") as f:
         f.write(json.dumps(fact.to_dict()) + "\n")
 
 
 def _load_summaries() -> list[Summary]:
-    """Load all summaries from storage."""
+    """Lädt alle gespeicherten Zusammenfassungen."""
     if not SUMMARIES_FILE.exists():
         return []
     summaries = []
@@ -107,12 +107,12 @@ def _load_summaries() -> list[Summary]:
                 if line:
                     summaries.append(Summary.from_dict(json.loads(line)))
     except (json.JSONDecodeError, OSError) as e:
-        logger.warning(f"Failed to load summaries: {e}")
+        logger.warning(f"Zusammenfassungen konnten nicht geladen werden: {e}")
     return summaries
 
 
 def _save_summary(summary: Summary) -> None:
-    """Append a summary to storage."""
+    """Hängt eine Zusammenfassung an den Speicher an."""
     _ensure_storage()
     with SUMMARIES_FILE.open("a") as f:
         f.write(json.dumps(summary.to_dict()) + "\n")
@@ -121,21 +121,21 @@ def _save_summary(summary: Summary) -> None:
 @mcp.tool()
 def store_fact(fact: str, source: str = "user", importance: float = 0.5) -> str:
     """
-    Store a fact in long-term memory.
+    Speichert einen Fakt im Langzeitgedächtnis.
 
     Args:
-        fact: The fact to store (e.g., "User's name is David")
-        source: Where the fact came from ("user", "conversation", "system")
-        importance: How important the fact is (0.0 to 1.0)
+        fact: Der zu speichernde Fakt (z. B. „Der Name des Nutzers ist David")
+        source: Herkunft des Fakts („user", „conversation", „system")
+        importance: Wichtigkeit des Fakts (0.0 bis 1.0)
 
     Returns:
-        Confirmation message with fact ID
+        Bestätigungsmeldung mit der Fakt-ID
     """
     importance = max(0.0, min(1.0, importance))
     new_fact = Fact(content=fact, source=source, importance=importance)
     _save_fact(new_fact)
     return json.dumps({
-        "status": "stored",
+        "status": "gespeichert",
         "id": new_fact.id,
         "fact": fact,
     })
@@ -144,39 +144,39 @@ def store_fact(fact: str, source: str = "user", importance: float = 0.5) -> str:
 @mcp.tool()
 def search_memory(query: str, limit: int = 5) -> str:
     """
-    Search long-term memory for relevant facts.
+    Durchsucht das Langzeitgedächtnis nach relevanten Fakten.
 
-    Uses simple keyword matching. For semantic search, the main agent
-    should interpret results in context.
+    Verwendet einfaches Schlüsselwort-Matching. Für semantische Suche
+    sollte der Hauptagent die Ergebnisse im Kontext interpretieren.
 
     Args:
-        query: What to search for
-        limit: Maximum number of results (default 5)
+        query: Wonach gesucht werden soll
+        limit: Maximale Anzahl der Ergebnisse (Standard: 5)
 
     Returns:
-        JSON array of matching facts, sorted by relevance
+        JSON-Array mit passenden Fakten, sortiert nach Relevanz
     """
     facts = _load_facts()
     if not facts:
-        return json.dumps({"facts": [], "message": "No facts stored yet"})
+        return json.dumps({"facts": [], "message": "Noch keine Fakten gespeichert"})
 
-    # Simple keyword-based scoring (LLM in main agent handles semantics)
+    # Einfaches schlüsselwortbasiertes Scoring (Semantik übernimmt der Hauptagent)
     query_lower = query.lower()
     query_words = set(query_lower.split())
 
     scored = []
     for fact in facts:
         content_lower = fact.content.lower()
-        # Score: word overlap + importance boost + recency
+        # Score: Wortüberschneidung + Wichtigkeitsbonus + Aktualität
         word_score = sum(1 for w in query_words if w in content_lower)
         importance_boost = fact.importance * 0.5
-        recency_boost = min(0.3, (time.time() - fact.created_at) / (86400 * 30))  # Decay over 30 days
+        recency_boost = min(0.3, (time.time() - fact.created_at) / (86400 * 30))  # Abfall über 30 Tage
         total_score = word_score + importance_boost - recency_boost
 
         if word_score > 0 or query_lower in content_lower:
             scored.append((total_score, fact))
 
-    # Sort by score descending
+    # Absteigend nach Score sortieren
     scored.sort(key=lambda x: x[0], reverse=True)
 
     results = []
@@ -195,19 +195,19 @@ def search_memory(query: str, limit: int = 5) -> str:
 @mcp.tool()
 def list_facts(limit: int = 20, min_importance: float = 0.0) -> str:
     """
-    List stored facts, optionally filtered by importance.
+    Listet gespeicherte Fakten auf, optional nach Wichtigkeit gefiltert.
 
     Args:
-        limit: Maximum number of facts to return
-        min_importance: Minimum importance threshold (0.0 to 1.0)
+        limit: Maximale Anzahl zurückzugebender Fakten
+        min_importance: Mindestwichtigkeitsschwelle (0.0 bis 1.0)
 
     Returns:
-        JSON array of facts sorted by importance then recency
+        JSON-Array mit Fakten, sortiert nach Wichtigkeit und Aktualität
     """
     facts = _load_facts()
     filtered = [f for f in facts if f.importance >= min_importance]
 
-    # Sort by importance (desc), then recency (desc)
+    # Sortierung: Wichtigkeit (absteigend), dann Aktualität (absteigend)
     filtered.sort(key=lambda f: (f.importance, f.created_at), reverse=True)
 
     results = []
@@ -226,19 +226,19 @@ def list_facts(limit: int = 20, min_importance: float = 0.0) -> str:
 @mcp.tool()
 def store_summary(summary: str, period: str, start_time: str, end_time: str) -> str:
     """
-    Store a conversation summary.
+    Speichert eine Gesprächszusammenfassung.
 
     Args:
-        summary: The summary text
-        period: Summary period ("session", "daily", "weekly")
-        start_time: Start of summarized period (ISO format)
-        end_time: End of summarized period (ISO format)
+        summary: Der Zusammenfassungstext
+        period: Zusammenfassungszeitraum („session", „daily", „weekly")
+        start_time: Beginn des zusammengefassten Zeitraums (ISO-Format)
+        end_time: Ende des zusammengefassten Zeitraums (ISO-Format)
 
     Returns:
-        Confirmation message with summary ID
+        Bestätigungsmeldung mit der Zusammenfassungs-ID
     """
     if period not in ("session", "daily", "weekly"):
-        return json.dumps({"error": "period must be 'session', 'daily', or 'weekly'"})
+        return json.dumps({"error": "period muss 'session', 'daily' oder 'weekly' sein"})
 
     new_summary = Summary(
         content=summary,
@@ -248,7 +248,7 @@ def store_summary(summary: str, period: str, start_time: str, end_time: str) -> 
     )
     _save_summary(new_summary)
     return json.dumps({
-        "status": "stored",
+        "status": "gespeichert",
         "id": new_summary.id,
         "period": period,
     })
@@ -257,21 +257,21 @@ def store_summary(summary: str, period: str, start_time: str, end_time: str) -> 
 @mcp.tool()
 def get_summaries(period: str = "all", limit: int = 5) -> str:
     """
-    Retrieve stored conversation summaries.
+    Ruft gespeicherte Gesprächszusammenfassungen ab.
 
     Args:
-        period: Filter by period ("session", "daily", "weekly", or "all")
-        limit: Maximum number of summaries to return
+        period: Filterung nach Zeitraum („session", „daily", „weekly" oder „all")
+        limit: Maximale Anzahl zurückzugebender Zusammenfassungen
 
     Returns:
-        JSON array of summaries, most recent first
+        JSON-Array mit Zusammenfassungen, neueste zuerst
     """
     summaries = _load_summaries()
 
     if period != "all":
         summaries = [s for s in summaries if s.period == period]
 
-    # Sort by created_at descending (most recent first)
+    # Sortierung nach created_at absteigend (neueste zuerst)
     summaries.sort(key=lambda s: s.created_at, reverse=True)
 
     results = []
@@ -291,10 +291,10 @@ def get_summaries(period: str = "all", limit: int = 5) -> str:
 @mcp.tool()
 def memory_stats() -> str:
     """
-    Get statistics about stored memories.
+    Gibt Statistiken über gespeicherte Erinnerungen zurück.
 
     Returns:
-        JSON object with memory statistics
+        JSON-Objekt mit Gedächtnisstatistiken
     """
     facts = _load_facts()
     summaries = _load_summaries()

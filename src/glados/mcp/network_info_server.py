@@ -50,7 +50,7 @@ def _resolve_addresses(hostname: str) -> list[str]:
 
 @mcp.tool()
 def host_info() -> str:
-    """Return hostname and resolved addresses."""
+    """Gibt den Hostnamen und die aufgelösten IP-Adressen des Systems zurück."""
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
     return json.dumps(
@@ -64,7 +64,7 @@ def host_info() -> str:
 
 @mcp.tool()
 def interfaces() -> str:
-    """Return network interface metadata from sysfs."""
+    """Gibt Metadaten zu den Netzwerkschnittstellen aus dem sysfs zurück."""
     return json.dumps({"interfaces": _list_interfaces()})
 
 

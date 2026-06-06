@@ -134,7 +134,7 @@ class SpeechPlayer:
                             {
                                 "role": "user",
                                 "content": (
-                                    "[SYSTEM: User interrupted mid-response! Full intended output: "
+                                    "[SYSTEM: Benutzer hat die Antwort unterbrochen! Vollständig beabsichtigte Ausgabe: "
                                     f"'{audio_msg.text}']"
                                 ),
                             },

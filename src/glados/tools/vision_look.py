@@ -10,17 +10,17 @@ tool_definition = {
     "type": "function",
     "function": {
         "name": "vision_look",
-        "description": "Capture the current camera view and describe it in detail.",
+        "description": "Nimmt die aktuelle Kameraansicht auf und beschreibt sie im Detail.",
         "parameters": {
             "type": "object",
             "properties": {
                 "prompt": {
                     "type": "string",
-                    "description": "Optional instruction for what to describe.",
+                    "description": "Optionale Anweisung, was beschrieben werden soll.",
                 },
                 "max_tokens": {
                     "type": "number",
-                    "description": "Maximum tokens to generate for the description.",
+                    "description": "Maximale Anzahl an Tokens für die Beschreibung.",
                 },
             },
         },
@@ -35,11 +35,11 @@ class VisionLook:
         tool_config: dict[str, Any] | None = None,
     ) -> None:
         """
-        Initializes the tool with a queue for communication with the LLM.
+        Initialisiert das Tool mit einer Queue zur Kommunikation mit dem LLM.
 
         Args:
-            llm_queue: A queue for sending tool results to the language model.
-            tool_config: Configuration dictionary containing tool settings.
+            llm_queue: Eine Queue zum Senden von Tool-Ergebnissen an das Sprachmodell.
+            tool_config: Konfigurationswörterbuch mit Tool-Einstellungen.
         """
         self.llm_queue = llm_queue
         tool_config = tool_config or {}
@@ -49,14 +49,14 @@ class VisionLook:
 
     def run(self, tool_call_id: str, call_args: dict[str, Any]) -> None:
         """
-        Executes a detailed vision request via the VisionProcessor thread.
+        Führt eine detaillierte Bildanfrage über den VisionProcessor-Thread aus.
 
         Args:
-            tool_call_id: Unique identifier for the tool call.
-            call_args: Arguments passed by the LLM related to this tool call.
+            tool_call_id: Eindeutiger Bezeichner für den Tool-Aufruf.
+            call_args: Vom LLM übergebene Argumente für diesen Tool-Aufruf.
         """
         if self._request_queue is None:
-            error_msg = "error: vision tool is unavailable"
+            error_msg = "Fehler: Vision-Tool nicht verfügbar"
             logger.error(f"VisionLook: {error_msg}")
             self.llm_queue.put(
                 {
@@ -86,7 +86,7 @@ class VisionLook:
         try:
             self._request_queue.put(request, timeout=self._timeout)
         except queue.Full:
-            error_msg = "error: vision request queue is full"
+            error_msg = "Fehler: Vision-Anfrage-Queue ist voll"
             logger.error(f"VisionLook: {error_msg}")
             self.llm_queue.put(
                 {
@@ -101,7 +101,7 @@ class VisionLook:
         try:
             result = response_queue.get(timeout=self._timeout)
         except queue.Empty:
-            error_msg = "error: vision request timed out"
+            error_msg = "Fehler: Vision-Anfrage hat das Zeitlimit überschritten"
             logger.error(f"VisionLook: {error_msg}")
             self.llm_queue.put(
                 {

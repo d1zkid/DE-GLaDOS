@@ -29,7 +29,7 @@ def _read_uptime() -> float | None:
 
 @mcp.tool()
 def now_iso() -> str:
-    """Return current time in ISO-8601 format (UTC and local)."""
+    """Gibt die aktuelle Uhrzeit im ISO-8601-Format zurück (UTC und Lokalzeit)."""
     utc = datetime.now(timezone.utc).isoformat()
     local = datetime.now().astimezone().isoformat()
     return json.dumps({"utc": utc, "local": local})
@@ -37,7 +37,7 @@ def now_iso() -> str:
 
 @mcp.tool()
 def uptime_seconds() -> str:
-    """Return system uptime in seconds when available."""
+    """Gibt die Systemlaufzeit in Sekunden zurück, sofern verfügbar."""
     uptime = _read_uptime()
     if uptime is None:
         uptime = time.monotonic()
@@ -46,7 +46,7 @@ def uptime_seconds() -> str:
 
 @mcp.tool()
 def boot_time() -> str:
-    """Return estimated boot time as an ISO-8601 timestamp."""
+    """Gibt den geschätzten Startzeitpunkt des Systems als ISO-8601-Zeitstempel zurück."""
     uptime = _read_uptime()
     if uptime is None:
         uptime = time.monotonic()

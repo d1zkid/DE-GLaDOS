@@ -1,0 +1,6 @@
+# Pull from your existing Qwen model 
+FROM qwen2.5:14b
+
+# Drop the temperature significantly to stop the language-drift bug
+PARAMETER temperature 0.3
+PARAMETER top_p 0.9

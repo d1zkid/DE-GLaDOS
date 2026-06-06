@@ -9,13 +9,13 @@ tool_definition = {
     "type": "function",
     "function": {
         "name": "slow clap",
-        "description": "Performs a slow clap.",
+        "description": "Führt einen langsamen Applaus durch.",
         "parameters": {
             "type": "object",
             "properties": {
                 "claps": {
                     "type": "number",
-                    "description": "The number of slow claps to perform."
+                    "description": "Die Anzahl der langsamen Klatschgeräusche."
                 }
             },
             "required": ["claps"]
@@ -30,11 +30,11 @@ class SlowClap:
         tool_config: dict[str, Any] | None = None,
     ) -> None:
         """
-        Initializes the tool with a queue for communication with the LLM.
+        Initialisiert das Tool mit einer Queue zur Kommunikation mit dem LLM.
 
         Args:
-            llm_queue: A queue for sending tool results to the language model.
-            tool_config: Configuration dictionary containing tool settings.
+            llm_queue: Eine Queue zum Senden von Tool-Ergebnissen an das Sprachmodell.
+            tool_config: Konfigurationswörterbuch mit Tool-Einstellungen.
         """
         self.llm_queue = llm_queue
         tool_config = tool_config or {}
@@ -42,15 +42,15 @@ class SlowClap:
 
     def run(self, tool_call_id: str, call_args: dict[str, Any]) -> None:
         """
-        Executes the slow clap by playing an audio file multiple times.
+        Führt den langsamen Applaus aus, indem eine Audiodatei mehrmals abgespielt wird.
 
         Args:
-            tool_call_id: Unique identifier for the tool call.
-            call_args: Arguments passed by the LLM related to this tool call.
+            tool_call_id: Eindeutiger Bezeichner für den Tool-Aufruf.
+            call_args: Vom LLM übergebene Argumente für diesen Tool-Aufruf.
         """
         try:
             claps = int(call_args.get("claps", 1))
-            claps = max(1, min(claps, 5))  # clamp between 1 and 5
+            claps = max(1, min(claps, 5))  # Begrenzen auf 1 bis 5
         except (ValueError, TypeError):
             claps = 1
 
@@ -70,7 +70,7 @@ class SlowClap:
             )
 
         except FileNotFoundError:
-            error_msg = f"error: audio file not found at {self.audio_path}"
+            error_msg = f"Fehler: Audiodatei nicht gefunden unter {self.audio_path}"
             logger.error(f"SlowClap: {error_msg}")
             self.llm_queue.put(
                 {
@@ -82,7 +82,7 @@ class SlowClap:
             )
 
         except ValueError as ve:
-            error_msg = f"error: invalid audio file - {ve}"
+            error_msg = f"Fehler: Ungültige Audiodatei - {ve}"
             logger.error(f"SlowClap: {error_msg}")
             self.llm_queue.put(
                 {
@@ -94,7 +94,7 @@ class SlowClap:
             )
 
         except sd.PortAudioError as pa_err:
-            error_msg = f"error: audio device error - {pa_err}"
+            error_msg = f"Fehler: Audiogerät-Fehler - {pa_err}"
             logger.error(f"SlowClap: {error_msg}")
             self.llm_queue.put(
                 {

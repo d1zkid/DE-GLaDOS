@@ -7,13 +7,13 @@ tool_definition = {
     "type": "function",
     "function": {
         "name": "speak",
-        "description": "Speak the provided text aloud.",
+        "description": "Den angegebenen Text laut vorlesen.",
         "parameters": {
             "type": "object",
             "properties": {
                 "text": {
                     "type": "string",
-                    "description": "The text to speak.",
+                    "description": "Der vorzulesende Text.",
                 },
             },
             "required": ["text"],
@@ -34,14 +34,14 @@ class Speak:
 
     def run(self, tool_call_id: str, call_args: dict[str, Any]) -> None:
         if self._tts_queue is None:
-            error_msg = "error: TTS queue is unavailable"
+            error_msg = "Fehler: TTS-Queue nicht verfügbar"
             logger.error(f"Speak: {error_msg}")
             self._send_result(tool_call_id, error_msg)
             return
 
         text = str(call_args.get("text", "")).strip()
         if not text:
-            error_msg = "error: no text provided to speak"
+            error_msg = "Fehler: Kein Text zum Vorlesen angegeben"
             logger.error(f"Speak: {error_msg}")
             self._send_result(tool_call_id, error_msg)
             return

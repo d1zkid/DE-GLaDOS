@@ -43,17 +43,17 @@ def _iter_proc_status() -> list[dict[str, Any]]:
 
 @mcp.tool()
 def process_count() -> str:
-    """Return the number of processes visible in /proc."""
+    """Gibt die Anzahl der aktuell laufenden Prozesse aus /proc zurück."""
     proc_root = Path("/proc")
     if not proc_root.exists():
-        return json.dumps({"error": "/proc unavailable"})
+        return json.dumps({"error": "/proc nicht verfügbar"})
     count = sum(1 for entry in proc_root.iterdir() if entry.name.isdigit())
     return json.dumps({"process_count": count})
 
 
 @mcp.tool()
 def top_memory(limit: int = 5) -> str:
-    """Return top processes by resident memory from /proc."""
+    """Gibt die Prozesse mit dem höchsten Arbeitsspeicherverbrauch aus /proc zurück."""
     try:
         limit = int(limit)
     except (TypeError, ValueError):

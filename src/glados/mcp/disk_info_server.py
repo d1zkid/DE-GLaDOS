@@ -31,7 +31,7 @@ def _read_mounts() -> list[dict[str, Any]]:
 
 @mcp.tool()
 def disk_usage(path: str = "/") -> str:
-    """Return disk usage for a path."""
+    """Gibt die Festplattennutzung für einen bestimmten Pfad zurück."""
     try:
         usage = Path(path)
         stats = usage.stat()
@@ -53,7 +53,7 @@ def disk_usage(path: str = "/") -> str:
 
 @mcp.tool()
 def mounts() -> str:
-    """Return mounted filesystems from /proc/mounts."""
+    """Gibt alle eingehängten Dateisysteme aus /proc/mounts zurück."""
     data = _read_mounts()
     return json.dumps({"mounts": data})
 

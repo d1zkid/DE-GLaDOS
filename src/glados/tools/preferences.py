@@ -1,8 +1,8 @@
 """
-Preferences tools for managing user preferences.
+Einstellungs-Tools zur Verwaltung von Benutzereinstellungen.
 
-These tools allow the main agent to get and set user preferences,
-which subagents can read to customize their behavior.
+Diese Tools ermöglichen es dem Hauptagenten, Benutzereinstellungen abzurufen
+und zu setzen. Subagenten können diese lesen, um ihr Verhalten anzupassen.
 """
 
 import json
@@ -14,7 +14,7 @@ get_preferences_definition = {
     "type": "function",
     "function": {
         "name": "get_preferences",
-        "description": "Get current user preferences. Returns all stored preferences as JSON.",
+        "description": "Aktuelle Benutzereinstellungen abrufen. Gibt alle gespeicherten Einstellungen als JSON zurück.",
         "parameters": {"type": "object", "properties": {}},
     },
 }
@@ -25,18 +25,18 @@ set_preference_definition = {
     "function": {
         "name": "set_preference",
         "description": (
-            "Set a user preference. Use this to remember user likes/dislikes. "
-            "Examples: news_topics=['AI', 'science'], news_exclude=['crypto'], weather_units='celsius'"
+            "Eine Benutzereinstellung festlegen. Verwenden, um Vorlieben und Abneigungen des Benutzers zu speichern. "
+            "Beispiele: news_topics=['KI', 'Wissenschaft'], news_exclude=['Krypto'], weather_units='celsius'"
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "key": {
                     "type": "string",
-                    "description": "Preference key (e.g., 'news_topics', 'weather_units')",
+                    "description": "Einstellungsschlüssel (z. B. 'news_topics', 'weather_units')",
                 },
                 "value": {
-                    "description": "Preference value (string, number, boolean, or array)",
+                    "description": "Einstellungswert (Zeichenkette, Zahl, Boolescher Wert oder Array)",
                 },
             },
             "required": ["key", "value"],
@@ -56,7 +56,7 @@ class GetPreferences:
 
     def run(self, tool_call_id: str, call_args: dict[str, Any]) -> None:
         if not self.preferences_store:
-            result = "error: preferences store not configured"
+            result = "Fehler: Einstellungsspeicher nicht konfiguriert"
         else:
             prefs = self.preferences_store.all()
             result = json.dumps(prefs, indent=2) if prefs else "{}"
@@ -81,15 +81,15 @@ class SetPreference:
 
     def run(self, tool_call_id: str, call_args: dict[str, Any]) -> None:
         if not self.preferences_store:
-            result = "error: preferences store not configured"
+            result = "Fehler: Einstellungsspeicher nicht konfiguriert"
         else:
             key = call_args.get("key", "")
             value = call_args.get("value")
             if not key:
-                result = "error: key is required"
+                result = "Fehler: Schlüssel ist erforderlich"
             else:
                 self.preferences_store.set(key, value)
-                result = f"Set {key} = {json.dumps(value)}"
+                result = f"Gesetzt: {key} = {json.dumps(value)}"
         self.llm_queue.put(
             {
                 "role": "tool",

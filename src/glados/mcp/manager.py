@@ -406,7 +406,7 @@ class MCPManager:
 
     def _tool_entry_to_definition(self, tool_name: str, entry: MCPToolEntry) -> dict[str, Any]:
         schema = entry.input_schema or {"type": "object", "properties": {}}
-        description = entry.description or f"MCP tool '{entry.name}' from server '{entry.server}'."
+        description = entry.description or f"MCP-Werkzeug '{entry.name}' vom Server '{entry.server}'."
         return {
             "type": "function",
             "function": {

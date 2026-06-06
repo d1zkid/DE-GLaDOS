@@ -177,7 +177,7 @@ class Glados:
     DEFAULT_PERSONALITY_PREPROMPT: tuple[dict[str, str], ...] = (
         {
             "role": "system",
-            "content": "You are a helpful AI assistant. You are here to assist the user in their tasks.",
+            "content": "Du bist ein hilfreicher KI-Assistent. Du bist hier, um dem Benutzer bei seinen Aufgaben zu helfen.",
         },
     )
 

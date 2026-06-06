@@ -1,4 +1,4 @@
-# Import individual tools
+# Einzelne Tools importieren
 from .do_nothing import tool_definition as do_nothing_def, DoNothing
 from .get_report import tool_definition as get_report_def, GetReport
 from .slow_clap import tool_definition as slow_clap_def, SlowClap
@@ -11,7 +11,7 @@ from .preferences import (
     SetPreference,
 )
 
-# Export all tool definitions
+# Alle Tool-Definitionen exportieren
 tool_definitions = [
     do_nothing_def,
     get_report_def,
@@ -22,7 +22,7 @@ tool_definitions = [
     set_preference_definition,
 ]
 
-# Export all tool classes
+# Alle Tool-Klassen exportieren
 tool_classes = {
     "do_nothing": DoNothing,
     "get_report": GetReport,
@@ -33,5 +33,5 @@ tool_classes = {
     "set_preference": SetPreference,
 }
 
-# Export all tool names
+# Alle Tool-Namen exportieren
 all_tools = list(tool_classes.keys())
