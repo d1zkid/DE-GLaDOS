@@ -178,5 +178,8 @@ tmp/
 # Claude Code
 CLAUDE.md
 
+# Antigravity CLI
+.agents/
+
 # Backups
 *.bak

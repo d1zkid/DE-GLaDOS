@@ -1,27 +1,52 @@
 #!/usr/bin/env python3
 """Minimal Piper TTS server with audio post-processing."""
 
+import argparse
 import io
 import json
 import subprocess
 import wave
-import numpy as np
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+import numpy as np
 from scipy import signal
 
-MODEL_PATH = Path(__file__).parent / "models/TTS/de-glados_1834-medium.onnx"
-HOST = "127.0.0.1"
-PORT = 5050
-PIPER_BIN = "piper"
+# Find project root by searching upwards from __file__
+def get_project_root() -> Path:
+    current = Path(__file__).resolve().parent
+    for _ in range(10):
+        if (current / "models").exists() or (current / "pyproject.toml").exists():
+            return current
+        current = current.parent
+    # Fallback to 4 parents (src/glados/TTS/piper_server.py -> project_root)
+    return Path(__file__).resolve().parents[4]
 
-# --- Inference tuning (won't break anything, just change delivery) ---
-# length-scale: speaking rate. 0.9 = slightly snappier. Default: 1.0
-# noise-scale:  phoneme timing variance. Default: 0.667
-# noise-w-scale: pitch variance. Raise to 0.9-1.0 for more expression. Default: 0.8
-LENGTH_SCALE   = "1"
-NOISE_SCALE    = "0.667"
-NOISE_W_SCALE  = "0.95"   # note: flag is --noise-w-scale, not --noise-scale-w
+def parse_args():
+    parser = argparse.ArgumentParser(description="Piper TTS Server")
+    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
+    parser.add_argument("--port", type=int, default=5050, help="Port to bind to")
+    parser.add_argument("--model", default=None, help="Path to Piper model ONNX file")
+    parser.add_argument("--piper-bin", default="piper", help="Path/name of piper binary")
+    parser.add_argument("--length-scale", default="1.0", help="Speech length scale")
+    parser.add_argument("--noise-scale", default="0.667", help="Noise scale")
+    parser.add_argument("--noise-w-scale", default="0.95", help="Noise width scale")
+    # Use parse_known_args in case of extra flags passed
+    args, _ = parser.parse_known_args()
+    return args
+
+args = parse_args()
+
+HOST = args.host
+PORT = args.port
+PIPER_BIN = args.piper_bin
+LENGTH_SCALE = args.length_scale
+NOISE_SCALE = args.noise_scale
+NOISE_W_SCALE = args.noise_w_scale
+
+if args.model:
+    MODEL_PATH = Path(args.model)
+else:
+    MODEL_PATH = get_project_root() / "models/TTS/de-glados_1834-medium.onnx"
 
 # --- Pronunciation fixes ---
 # Words espeak-ng mispronounces. Add entries as you find them.

@@ -12,6 +12,14 @@ Glados:
   llm_headers: null
   wake_word: null
   voice: "piper"
+  piper:
+    host: "127.0.0.1"
+    port: 5050
+    model_path: "models/TTS/de-glados_1834-medium.onnx"
+    piper_bin: "piper"
+    length_scale: "1.0"
+    noise_scale: "0.667"
+    noise_w_scale: "0.95"
   announcement: "Alle neuronalen Netzwerkmodule sind geladen. System betriebsbereit."
   autonomy:
     enabled: false

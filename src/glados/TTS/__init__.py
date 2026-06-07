@@ -10,7 +10,8 @@ Functions:
     get_speech_synthesizer: Factory function to create TTS instances
 """
 
-from typing import Protocol
+from pathlib import Path
+from typing import Any, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
@@ -25,9 +26,120 @@ class SpeechSynthesizerProtocol(Protocol):
 class PiperSpeechSynthesizer:
     """TTS synthesizer that calls a local Piper HTTP server."""
 
-    def __init__(self, url: str = "http://127.0.0.1:5050"):
-        self.url = url.rstrip("/")
+    def __init__(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 5050,
+        model_path: str | None = None,
+        piper_bin: str = "piper",
+        length_scale: str = "1.0",
+        noise_scale: str = "0.667",
+        noise_w_scale: str = "0.95",
+    ):
+        self.url = f"http://{host}:{port}"
         self.sample_rate = 44100  # will be updated after first request if needed
+        self.process = None
+
+        self._start_server_if_needed(
+            host=host,
+            port=port,
+            model_path=model_path,
+            piper_bin=piper_bin,
+            length_scale=length_scale,
+            noise_scale=noise_scale,
+            noise_w_scale=noise_w_scale,
+        )
+
+    def _start_server_if_needed(
+        self,
+        host: str,
+        port: int,
+        model_path: str | None,
+        piper_bin: str,
+        length_scale: str,
+        noise_scale: str,
+        noise_w_scale: str,
+    ) -> None:
+        import socket
+        import subprocess
+        import sys
+        import time
+        from loguru import logger
+        from ..utils.resources import resource_path
+
+        # Check if the port is already in use
+        def is_port_in_use() -> bool:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                return s.connect_ex((host, port)) == 0
+
+        if is_port_in_use():
+            logger.info(f"Port {port} is already in use. Assuming Piper server is already running.")
+            return
+
+        # Locate the moved piper_server.py script in the same directory
+        import os
+        server_script = Path(__file__).parent / "piper_server.py"
+
+        if not server_script.exists():
+            logger.error(f"Piper server script not found at {server_script}")
+            return
+
+        # Build execution arguments
+        cmd = [
+            sys.executable,
+            str(server_script),
+            "--host", host,
+            "--port", str(port),
+            "--piper-bin", piper_bin,
+            "--length-scale", length_scale,
+            "--noise-scale", noise_scale,
+            "--noise-w-scale", noise_w_scale,
+        ]
+        if model_path:
+            # Resolve model_path relative to package root if needed
+            resolved_model = resource_path(model_path)
+            cmd.extend(["--model", str(resolved_model)])
+
+        logger.info(f"Starting Piper server subprocess on {host}:{port} using {server_script}...")
+        try:
+            self.process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception as e:
+            logger.error(f"Failed to start Piper server subprocess: {e}")
+            return
+
+        # Wait for port to become active
+        start_time = time.time()
+        timeout = 10.0
+        while time.time() - start_time < timeout:
+            if is_port_in_use():
+                logger.success("Piper server started successfully and is listening.")
+                return
+            if self.process.poll() is not None:
+                logger.error(f"Piper server subprocess exited early with code {self.process.returncode}")
+                return
+            time.sleep(0.1)
+
+        logger.warning("Piper server started but timed out waiting to listen on port.")
+
+    def shutdown(self) -> None:
+        import subprocess
+        from loguru import logger
+        if self.process:
+            logger.info("Stopping Piper server subprocess...")
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=3.0)
+                logger.success("Piper server subprocess stopped.")
+            except subprocess.TimeoutExpired:
+                logger.warning("Piper server subprocess did not exit, killing...")
+                self.process.kill()
+                self.process.wait()
+                logger.success("Piper server subprocess killed.")
+            self.process = None
 
     def generate_speech_audio(self, text: str) -> NDArray[np.float32]:
         import io
@@ -83,6 +195,7 @@ class PiperSpeechSynthesizer:
 # Factory function
 def get_speech_synthesizer(
     voice: str = "glados",
+    piper_config: dict[str, Any] | None = None,
 ) -> SpeechSynthesizerProtocol:
     """
     Factory function to get an instance of an audio synthesizer based on the specified voice type.
@@ -91,6 +204,7 @@ def get_speech_synthesizer(
             - "glados": GLaDOS voice synthesizer
             - "piper": Piper TTS server (German, local HTTP server on port 5050)
             - <str>: Kokoro voice synthesizer using the specified voice <str> is available
+        piper_config (dict[str, Any] | None): Optional configuration dictionary for Piper TTS.
     Returns:
         SpeechSynthesizerProtocol: An instance of the requested speech synthesizer
     Raises:
@@ -101,7 +215,16 @@ def get_speech_synthesizer(
         return tts_glados.SpeechSynthesizer()
 
     if voice.lower() == "piper":
-        return PiperSpeechSynthesizer(url="http://127.0.0.1:5050")
+        cfg = piper_config or {}
+        return PiperSpeechSynthesizer(
+            host=cfg.get("host", "127.0.0.1"),
+            port=cfg.get("port", 5050),
+            model_path=cfg.get("model_path"),
+            piper_bin=cfg.get("piper_bin", "piper"),
+            length_scale=cfg.get("length_scale", "1.0"),
+            noise_scale=cfg.get("noise_scale", "0.667"),
+            noise_w_scale=cfg.get("noise_w_scale", "0.95"),
+        )
 
     from ..TTS import tts_kokoro
 

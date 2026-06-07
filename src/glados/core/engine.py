@@ -94,6 +94,20 @@ class PersonalityPrompt(BaseModel):
         return {"role": field, "content": value}
 
 
+class PiperConfig(BaseModel):
+    """
+    Configuration model for the Piper TTS engine.
+    """
+
+    host: str = "127.0.0.1"
+    port: int = 5050
+    model_path: str | None = None
+    piper_bin: str = "piper"
+    length_scale: str = "1.0"
+    noise_scale: str = "0.667"
+    noise_w_scale: str = "0.95"
+
+
 class GladosConfig(BaseModel):
     """
     Configuration model for the Glados voice assistant.
@@ -123,6 +137,7 @@ class GladosConfig(BaseModel):
     vision: VisionConfig | None = None
     autonomy: AutonomyConfig | None = None
     mcp_servers: list[MCPServerConfig] | None = None
+    piper: PiperConfig | None = None
 
     @model_validator(mode="after")
     def _resolve_api_key_from_env(self) -> "GladosConfig":
@@ -816,7 +831,8 @@ class Glados:
         )
 
         tts_model: SpeechSynthesizerProtocol
-        tts_model = get_speech_synthesizer(config.voice)
+        piper_cfg = config.piper.model_dump() if config.piper else None
+        tts_model = get_speech_synthesizer(config.voice, piper_config=piper_cfg)
 
         audio_io = get_audio_system(backend_type=config.audio_io)
 
@@ -925,6 +941,11 @@ class Glados:
         if self.mcp_manager:
             logger.debug("Shutting down MCP manager...")
             self.mcp_manager.shutdown()
+
+        # Stop TTS model (e.g. Piper server) if it needs cleanup
+        if hasattr(self, "_tts") and hasattr(self._tts, "shutdown"):
+            logger.debug("Shutting down TTS model...")
+            self._tts.shutdown()
 
         # Log any failed shutdowns
         failed = [r for r in results if not r.success]
