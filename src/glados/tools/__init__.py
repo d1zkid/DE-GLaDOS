@@ -10,6 +10,7 @@ from .preferences import (
     GetPreferences,
     SetPreference,
 )
+from .web_search import tool_definition as web_search_def, WebSearch
 
 # Alle Tool-Definitionen exportieren
 tool_definitions = [
@@ -20,6 +21,7 @@ tool_definitions = [
     vision_look_def,
     get_preferences_definition,
     set_preference_definition,
+    web_search_def,
 ]
 
 # Alle Tool-Klassen exportieren
@@ -31,6 +33,7 @@ tool_classes = {
     "vision_look": VisionLook,
     "get_preferences": GetPreferences,
     "set_preference": SetPreference,
+    "web_search": WebSearch,
 }
 
 # Alle Tool-Namen exportieren
