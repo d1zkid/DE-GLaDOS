@@ -8,7 +8,6 @@
 - [ ] Add better german STT with whisper
 - [x] Translate MCP servers in src/glados/mcp
 - [x] Implement piper server into the tool + fix piper config
-- [ ] Translate src/glados/autonomy/agents/
 - [x] Translate other minor things in src/glados/core
 
 ## extras/features
@@ -19,3 +18,6 @@
 	- [ ] *Maybe* Limited File access
 - Add new MCP server
 	- [ ] Calendar(CalDAV) integration
+- Rework autonomy agents
+	- [ ] Automatically check German news feeds I actually care about
+	- [ ] Automatically remind user of upcomming events(CalDAV)

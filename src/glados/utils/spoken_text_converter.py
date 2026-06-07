@@ -5,230 +5,155 @@ from typing import ClassVar
 
 class SpokenTextConverter:
     """
-    A utility class for converting text containing numbers, dates, times, and currency
-    into their spoken-word equivalents. Can you inagine how many edge cases you have to cover?
+    Eine Hilfsklasse zur Umwandlung von Text mit Zahlen, Daten, Uhrzeiten und Währungen
+    in ihre gesprochenen deutschen Entsprechungen.
 
-    This class provides methods to normalize and convert various text elements, such as:
-    - Numbers (e.g., "3.14" → "three point one four")
-    - Dates (e.g., "1/1/2024" → "one/one/twenty twenty-four")
-    - Times (e.g., "3:00pm" → "three o'clock")
-    - Currency (e.g., "$50.00" → "fifty dollars")
-    - Percentages (e.g., "50%" → "fifty percent")
-    - Titles and abbreviations (e.g., "Mr." → "Mister")
-    - Years (e.g., "1999" → "nineteen ninety-nine")
-    - Large numbers (e.g., "1000000" → "one million")
-    - Decimals (e.g., "0.5" → "zero point five")
-    - Mixed text (e.g., "The meeting is at 3:00pm on 1/1/2024.")
-    - And more...
-
-
-    Example usage:
+    Beispiel:
         >>> converter = SpokenTextConverter()
-        >>> result = converter.convert_to_spoken_text("The meeting is at 3:00pm on 1/1/2024.")
+        >>> result = converter.text_to_spoken("Das Meeting ist um 15:00 Uhr am 1.1.2024.")
         >>> print(result)
-        The meeting is at three o'clock on one/one/twenty twenty-four.
+        Das Meeting ist um fünfzehn Uhr am ersten ersten zweitausendvierundzwanzig.
     """
 
+    # German contractions / informal shortenings
     CONTRACTIONS: ClassVar[dict[str, str]] = {
-        "I'm": "I am",
-        "I'll": "I will",
-        "I've": "I have",
-        "I'd": "I would",
-        "won't": "will not",
-        "can't": "cannot",
-        "n't": " not",
-        "'ll": " will",
-        "'re": " are",
-        "'ve": " have",
-        "'m": " am",
-        "'d": " would",
-        "ain't": "is not",
+        "ich'm": "ich bin",
+        "ich'll": "ich werde",
+        "ich've": "ich habe",
+        "ich'd": "ich würde",
+        "nicht": "nicht",
+        "kann't": "kann nicht",
+        "won't": "wird nicht",
+        "n't": " nicht",
+        "'ll": " wird",
+        "'re": " sind",
+        "'ve": " haben",
+        "'m": " bin",
+        "'d": " würde",
     }
 
     def __init__(self) -> None:
-        # Initialize any necessary state or configurations here, maybe for other languages?
-
-        # Precompile quick check pattern
-        # Note: Only check for mathematical operators that aren't commonly used in regular text
-        """
-        Initialize the SpokenTextConverter with regex patterns for identifying convertible text content.
-
-        This method sets up a compiled regular expression pattern to quickly identify text
-        that may require conversion, such as numbers, currency symbols, mathematical operators,
-        common abbreviations, and ellipses.
-
-        The pattern checks for:
-        - Digits
-        - Currency symbols ($ and £)
-        - Specific mathematical operators (multiplication, division, exponentiation, roots)
-        - Common title abbreviations
-        - Ellipses (three or more dots, including spaced versions)
-
-        The regex is compiled with verbose mode (re.VERBOSE) to allow more readable pattern construction.
-        """
         self.convertible_pattern = re.compile(
             r"""(?x)
-            \d                        # Any digit
-            |\$|£                     # Currency symbols
-            |[×÷^√∛]                 # Unambiguous mathematical operators (removed hyphen)
-            |\b(?:Dr|Mr|Mrs|Ms)\.    # Common abbreviations
-            |\.{3,}|\. \. \.         # Triple dots (including spaced version)
+            \d                          # Jede Ziffer
+            |\$|£|€                     # Währungssymbole
+            |[×÷^√∛]                   # Mathematische Operatoren
+            |\b(?:Dr|Hr|Fr|Prof)\.     # Deutsche Abkürzungen
+            |\.{3,}|\. \. \.           # Auslassungspunkte
             """
         )
 
-        # TODO: Add compiled regex patterns for other conversions
-
     def _number_to_words(self, num: float | str) -> str:
         """
-        Convert a number into its spoken-word equivalent.
+        Wandelt eine Zahl in ihre deutsche Wortform um.
 
-        Handles integers, floating-point numbers, and numeric strings, including:
-        - Negative numbers
-        - Large numbers (e.g., millions, billions)
-        - Decimal numbers
-        - Zero and whole numbers
-
-        Parameters:
-            num (float | str): The number to convert. Can be an integer, float, or numeric string.
-
-        Returns:
-            str: The spoken-word representation of the number.
-
-        Raises:
-            ValueError: If the input cannot be converted to a valid number.
-
-        Examples:
-            >>> converter._number_to_words(42)
-            'forty-two'
-            >>> converter._number_to_words(-17)
-            'negative seventeen'
-            >>> converter._number_to_words(1234567)
-            'one million two hundred thirty-four thousand five hundred sixty-seven'
-            >>> converter._number_to_words(3.14)
-            'three point one four'
+        Beispiele:
+            42      → 'zweiundvierzig'
+            -17     → 'minus siebzehn'
+            1000000 → 'eine Million'
+            3.14    → 'drei Komma eins vier'
         """
         try:
             if isinstance(num, str):
-                # Check if it's actually an integer in string form
                 if "." not in num or num.endswith(".0"):
                     num = int(float(num))
                 else:
                     num = float(num)
 
-            # Special handling for integers
-            if isinstance(num, int) or (isinstance(num, float) and num.is_integer()):
-                num = int(num)  # Convert to int if it's a whole number
+            if isinstance(num, float) and num.is_integer():
+                num = int(num)
 
             if num == 0:
-                return "zero"
+                return "null"
 
             ones = [
-                "zero",
-                "one",
-                "two",
-                "three",
-                "four",
-                "five",
-                "six",
-                "seven",
-                "eight",
-                "nine",
-                "ten",
-                "eleven",
-                "twelve",
-                "thirteen",
-                "fourteen",
-                "fifteen",
-                "sixteen",
-                "seventeen",
-                "eighteen",
-                "nineteen",
+                "null", "ein", "zwei", "drei", "vier", "fünf", "sechs", "sieben",
+                "acht", "neun", "zehn", "elf", "zwölf", "dreizehn", "vierzehn",
+                "fünfzehn", "sechzehn", "siebzehn", "achtzehn", "neunzehn",
+            ]
+            # Standalone forms (used when the number stands alone, not in compounds)
+            ones_standalone = [
+                "null", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben",
+                "acht", "neun", "zehn", "elf", "zwölf", "dreizehn", "vierzehn",
+                "fünfzehn", "sechzehn", "siebzehn", "achtzehn", "neunzehn",
             ]
             tens = [
-                "",
-                "",
-                "twenty",
-                "thirty",
-                "forty",
-                "fifty",
-                "sixty",
-                "seventy",
-                "eighty",
-                "ninety",
+                "", "", "zwanzig", "dreißig", "vierzig", "fünfzig",
+                "sechzig", "siebzig", "achtzig", "neunzig",
             ]
-            scales = ["", "thousand", "million", "billion"]
 
-            def process_chunk(n: int, scale: int) -> str:
-                """
-                Convert a chunk of a number into its spoken word representation.
-
-                This method handles converting a three-digit number chunk into words, including handling
-                hundreds, tens, and ones places. It supports numbers from 0 to 999 and can append
-                scale words (thousand, million, etc.) when appropriate.
-
-                Parameters:
-                    n (int): The number chunk to convert (0-999)
-                    scale (int): The scale index representing the magnitude (0 for ones, 1 for thousands,
-                    2 for millions, etc.)
-
-                Returns:
-                    str: The spoken word representation of the number chunk, including optional scale word
-
-                Example:
-                    process_chunk(123, 1) returns "one hundred twenty-three thousand"
-                    process_chunk(45, 0) returns "forty-five"
-                """
+            def process_chunk(n: int, scale: int, standalone: bool = False) -> str:
+                """Verarbeitet einen dreistelligen Zahlenblock."""
                 if n == 0:
                     return ""
 
                 hundreds = n // 100
                 remainder = n % 100
-
                 words = []
 
                 if hundreds > 0:
-                    words.append(f"{ones[hundreds]} hundred")
+                    words.append(f"{ones[hundreds]}hundert")
 
                 if remainder > 0:
                     if remainder < 20:
-                        words.append(ones[remainder])
+                        # Use standalone form only for top-level single numbers
+                        word = ones_standalone[remainder] if (standalone and scale == 0 and hundreds == 0) else ones[remainder]
+                        words.append(word)
                     else:
                         tens_digit = remainder // 10
                         ones_digit = remainder % 10
                         if ones_digit == 0:
                             words.append(tens[tens_digit])
                         else:
-                            words.append(f"{tens[tens_digit]}-{ones[ones_digit]}")
+                            # German: einundzwanzig, zweiunddreißig, etc.
+                            words.append(f"{ones[ones_digit]}und{tens[tens_digit]}")
 
-                if scale > 0 and len(words) > 0:
-                    words.append(scales[scale])
+                result = "".join(words)
 
-                return " ".join(words)
+                # Scale words in German
+                if scale == 1 and result:
+                    result += "tausend"
+                elif scale == 2 and result:
+                    # Million is separate and uses spaces
+                    if n == 1:
+                        result = "eine Million "
+                    else:
+                        result = result + " Millionen "
+                elif scale == 3 and result:
+                    if n == 1:
+                        result = "eine Milliarde "
+                    else:
+                        result = result + " Milliarden "
 
-            # Handle negative numbers
+                return result
+
             if num < 0:
-                return "negative " + self._number_to_words(abs(num))
+                return "minus " + self._number_to_words(abs(num))
 
-            # Handle whole numbers differently from decimals
             if isinstance(num, int):
                 if num == 0:
-                    return "zero"
+                    return "null"
 
-                intermediate_result: list[str] = []
+                # Special case for exactly 1 standalone
+                if num == 1:
+                    return "eins"
+
+                result_parts: list[str] = []
                 scale = 0
+                remaining = num
 
-                while num > 0:
-                    chunk = num % 1000
+                while remaining > 0:
+                    chunk = remaining % 1000
                     if chunk != 0:
-                        chunk_words = process_chunk(chunk, scale)
-                        intermediate_result.insert(0, chunk_words)
-                    num //= 1000
+                        chunk_words = process_chunk(chunk, scale, standalone=(num < 20))
+                        result_parts.insert(0, chunk_words)
+                    remaining //= 1000
                     scale += 1
 
-                return " ".join(filter(None, intermediate_result))
+                return "".join(filter(None, result_parts))
             else:
-                # Handle decimal numbers
-                str_num = f"{num:.10f}".rstrip("0")  # Handle floating point precision
+                # Decimal numbers
+                str_num = f"{num:.10f}".rstrip("0")
                 if "." in str_num:
                     int_part, dec_part = str_num.split(".")
                 else:
@@ -236,113 +161,81 @@ class SpokenTextConverter:
 
                 int_num = int(int_part)
 
-                # Convert integer part
                 if int_num == 0:
-                    result = "zero"
+                    result = "null"
+                elif int_num == 1:
+                    result = "eins"
                 else:
-                    intermediate_result = []
+                    result_parts = []
                     scale = 0
                     while int_num > 0:
                         chunk = int_num % 1000
                         if chunk != 0:
                             chunk_words = process_chunk(chunk, scale)
-                            intermediate_result.insert(0, chunk_words)
+                            result_parts.insert(0, chunk_words)
                         int_num //= 1000
                         scale += 1
-                    result = " ".join(filter(None, intermediate_result))
+                    result = "".join(filter(None, result_parts))
 
-                # Add decimal part if it exists
                 if dec_part:
-                    result = result + " point " + " ".join(ones[int(digit)] for digit in dec_part)
+                    # German decimal separator is "Komma"
+                    digit_words = [ones_standalone[int(d)] for d in dec_part]
+                    result = result + " Komma " + " ".join(digit_words)
+
                 return result
+
         except (ValueError, TypeError) as e:
-            raise ValueError(f"Invalid number format: {num}") from e
+            raise ValueError(f"Ungültiges Zahlenformat: {num}") from e
 
     def _split_num(self, num: re.Match) -> str:
         """
-        Convert numbers, times, and years into their spoken-word equivalents.
+        Wandelt Uhrzeiten und Jahreszahlen in ihre deutsche Lautform um.
 
-        This method handles complex conversions for:
-        - Time formats (12-hour and 24-hour)
-            - With or without AM/PM
-            - Handles "o'clock" for zero minutes
-            - Converts minutes less than 10 with "oh"
-        - Year formats
-            - Single years (e.g., 1999)
-            - Decades (e.g., 1950s)
-            - Special handling for 2000 and 2000s
-            - Supports plural forms for decades
-
-        Parameters:
-            num (re.Match): A regex match object containing a time, year, or number string.
-
-        Returns:
-            str: The spoken-word equivalent of the input time, year, or number.
-
-        Raises:
-            ValueError: If the input cannot be parsed as a valid time or number.
+        Uhrzeiten: 15:00 → 'fünfzehn Uhr'
+        Jahre:     1999  → 'neunzehnhundertneunundneunzig'
         """
         try:
             match_str = num.group()
+
             if ":" in match_str:
-                # Split out any AM/PM first
                 time_str = match_str.lower()
-                am_pm = ""
-                if "am" in time_str:
-                    am_pm = " a m"
-                    time_str = time_str.replace("am", "").strip()
-                elif "pm" in time_str:
-                    am_pm = " p m"
-                    time_str = time_str.replace("pm", "").strip()
 
                 try:
                     h, m = [int(n) for n in time_str.split(":")]
                     if not (0 <= h <= 23 and 0 <= m <= 59):
                         return match_str
 
-                    # Handle minutes based on whether we have AM/PM
                     if m == 0:
-                        if am_pm:  # If we have AM/PM, just use the hour
-                            time = f"{self._number_to_words(h)}"
-                        else:  # No AM/PM, use o'clock
-                            time = f"{self._number_to_words(h)} o'clock"
+                        return f"{self._number_to_words(h)} Uhr"
                     elif m < 10:
-                        time = f"{self._number_to_words(h)} oh {self._number_to_words(m)}"
+                        return f"{self._number_to_words(h)} Uhr null{self._number_to_words(m)}"
                     else:
-                        time = f"{self._number_to_words(h)} {self._number_to_words(m)}"
-
-                    return f"{time}{am_pm}"
-
+                        return f"{self._number_to_words(h)} Uhr {self._number_to_words(m)}"
                 except ValueError:
                     return match_str
 
             # Year handling
             try:
-                number = int(match_str.rstrip("s"))  # Remove 's' if present
-                if len(match_str) == 4 or (len(match_str) == 5 and match_str.endswith("s")):
-                    left, right = divmod(number, 100)
-                    s = "s" if match_str.endswith("s") else ""
+                number = int(match_str.rstrip("er"))  # Handle "1990er"
+                is_decade = match_str.endswith("er")
 
-                    # Special case for 2000 and 2000s
+                if len(match_str.rstrip("er")) == 4:
+                    left, right = divmod(number, 100)
+
                     if number == 2000:
-                        if s:
-                            return "twenty hundreds"
-                        else:
-                            return "two thousand"
+                        return "zweitausend" + ("er" if is_decade else "")
+                    elif number >= 2001:
+                        # 2001–2099: zweitausend[rest]
+                        rest = self._number_to_words(right) if right else ""
+                        base = "zweitausend" + rest
                     elif right == 0:
-                        return f"{self._number_to_words(left)} hundred{s}"
+                        base = f"{self._number_to_words(left)}hundert"
                     elif right < 10:
-                        return f"{self._number_to_words(left)} oh {self._number_to_words(right)}{s}"
+                        base = f"{self._number_to_words(left)}hundert{self._number_to_words(right)}"
                     else:
-                        # Handle plural for decades (e.g., 1950s → "nineteen fifties")
-                        if s and right >= 10:
-                            decade_word = self._number_to_words(right).replace(" ", "-")
-                            if decade_word.endswith("y"):
-                                decade_word = decade_word[:-1] + "ies"
-                            else:
-                                decade_word += "s"
-                            return f"{self._number_to_words(left)} {decade_word}"
-                        return f"{self._number_to_words(left)} {self._number_to_words(right)}{s}"
+                        base = f"{self._number_to_words(left)}hundert{self._number_to_words(right)}"
+
+                    return base + ("er" if is_decade else "")
 
                 return self._number_to_words(number)
             except ValueError:
@@ -352,288 +245,163 @@ class SpokenTextConverter:
 
     def _flip_money(self, m: re.Match[str]) -> str:
         """
-        Convert currency expressions into their spoken-word equivalents.
+        Wandelt Währungsangaben in ihre deutsche Lautform um.
 
-        Handles currency conversions for dollars and pounds, including whole numbers and decimal
-        amounts. Supports singular and plural forms, and manages edge cases like zero cents/pence.
-
-        Parameters:
-            m (re.Match[str]): A regex match object containing a currency expression (e.g., "$50.00")
-
-        Returns:
-            str: The spoken-word representation of the currency amount
-
-        Raises:
-            ValueError: If the currency format is invalid or cannot be parsed
-
-        Examples:
-            "$5.00" → "five dollars"
-            "$1.50" → "one dollar and fifty cents"
-            "£10.00" → "ten pounds"
-            "£1.01" → "one pound and one penny"
+        "$5.00"  → 'fünf Dollar'
+        "€10.50" → 'zehn Euro und fünfzig Cent'
+        "£1.00"  → 'ein Pfund'
         """
         try:
-            m = m.group()
-            if not m or len(m) < 2:
-                raise ValueError("Invalid currency format")
+            text = m.group()
+            if not text or len(text) < 2:
+                raise ValueError("Ungültiges Währungsformat")
 
-            bill = "dollar" if m[0] == "$" else "pound"
-            amount_str = m[1:]
+            symbol = text[0]
+            if symbol == "$":
+                main_unit = "Dollar"
+                sub_unit_singular = "Cent"
+                sub_unit_plural = "Cent"
+            elif symbol == "€":
+                main_unit = "Euro"
+                sub_unit_singular = "Cent"
+                sub_unit_plural = "Cent"
+            else:  # £
+                main_unit = "Pfund"
+                sub_unit_singular = "Penny"
+                sub_unit_plural = "Pence"
 
-            if amount_str.isalpha():
-                return f"{self._number_to_words(int(amount_str))} {bill}s"
-            elif "." not in amount_str:
+            amount_str = text[1:]
+
+            if "." not in amount_str:
                 amount = int(amount_str)
-                s = "" if amount == 1 else "s"
-                return f"{self._number_to_words(amount)} {bill}{s}"
+                return f"{self._number_to_words(amount)} {main_unit}"
 
-            try:
-                b, c = amount_str.split(".")
-                if not b:  # Handle case like "$.50"
-                    b = "0"
-                s = "" if b == "1" else "s"
-                c = int(c.ljust(2, "0"))
+            b, c = amount_str.split(".")
+            if not b:
+                b = "0"
+            c_int = int(c.ljust(2, "0"))
 
-                # Don't add cents/pence if it's zero
-                if c == 0:
-                    return f"{self._number_to_words(int(b))} {bill}{s}"
+            main_str = self._number_to_words(int(b))
 
-                coins = f"cent{'' if c == 1 else 's'}" if m[0] == "$" else ("penny" if c == 1 else "pence")
-                return f"{self._number_to_words(int(b))} {bill}{s} and {self._number_to_words(c)} {coins}"
-            except ValueError as e:
-                raise ValueError(f"Invalid currency format: {m}") from e
+            if c_int == 0:
+                return f"{main_str} {main_unit}"
+
+            sub_unit = sub_unit_singular if c_int == 1 else sub_unit_plural
+            return f"{main_str} {main_unit} und {self._number_to_words(c_int)} {sub_unit}"
         except Exception:
-            return m  # Return original text if conversion fails
+            return m.group()
 
     def _point_num(self, num: re.Match[str]) -> str:
-        """
-        Convert a decimal number to its spoken-word representation.
-
-        Parameters:
-            num (re.Match[str]): A regex match object containing a decimal number.
-
-        Returns:
-            str: The spoken-word equivalent of the decimal number.
-
-        Converts the matched decimal number to a float and uses the _number_to_words method
-        to generate its spoken representation.
-        """
+        """Wandelt eine Dezimalzahl in ihre deutsche Lautform um."""
         return self._number_to_words(float(num.group()))
 
     def _convert_percentages(self, text: str) -> str:
         """
-        Convert percentage expressions in the text to their spoken-word equivalents.
+        Wandelt Prozentzahlen in ihre deutsche Lautform um.
 
-        This method uses regular expressions to identify percentage values and converts them to their spoken
-        form. It handles both whole numbers and decimal percentages, converting the numeric value to words
-        followed by the word "percent".
-
-        Parameters:
-            text (str): The input text containing percentage expressions (e.g., "50%").
-
-        Returns:
-            str: The input text with percentages converted to spoken words.
-
-        Examples:
-            >>> converter = SpokenTextConverter()
-            >>> converter._convert_percentages("The stock rose 25%")
-            'The stock rose twenty-five percent'
-            >>> converter._convert_percentages("Accuracy is 99.5%")
-            'Accuracy is ninety-nine point five percent'
+        '25%'   → 'fünfundzwanzig Prozent'
+        '99.5%' → 'neunundneunzig Komma fünf Prozent'
         """
-
         def replace_match(match: re.Match) -> str:
-            """
-            Convert a regex match of a percentage to its spoken word representation.
-
-            Parameters:
-                match (re.Match): A regex match object containing a percentage value.
-
-            Returns:
-                str: The spoken word representation of the percentage, including the word "percent".
-
-            Raises:
-                ValueError: If the matched number cannot be converted to a numeric type.
-            """
             number = match.group(1)
-            # Handle whole numbers without decimal point
             if "." not in number:
-                return f"{self._number_to_words(int(number))} percent"
-            return f"{self._number_to_words(float(number))} percent"
+                return f"{self._number_to_words(int(number))} Prozent"
+            return f"{self._number_to_words(float(number))} Prozent"
 
         return re.sub(r"(\d+\.?\d*)%", replace_match, text)
 
     def _contains_convertible_content(self, text: str) -> bool:
-        """
-        Fast check if text contains any content that needs conversion.
-        Only looks for unambiguous indicators of convertible content.
-        """
+        """Schnelle Prüfung ob der Text umwandelbaren Inhalt enthält."""
         return bool(self.convertible_pattern.search(text))
 
     def _convert_mathematical_notation(self, text: str) -> str:
         """
-        Convert mathematical notation to spoken form.
+        Wandelt mathematische Notation in ihre deutsche Lautform um.
 
-        Converts various mathematical symbols and notations into their spoken word equivalents.
-        Handles exponents, roots, arithmetic operations, fractions, and comparison symbols.
-
-        Parameters:
-            text (str): Text containing mathematical notation to be converted
-
-        Returns:
-            str: Text with mathematical notation transformed into spoken language
-
-        Handles conversions such as:
-            - Exponents: "8^2" → "eight to the power of two"
-            - Square roots: "√9" → "square root of nine"
-            - Cube roots: "∛8" → "cube root of eight"
-            - Basic operations: "5 + 3" → "five plus three"
-            - Fractions: "1/2" → "one over two"
-            - Equals signs: "=" → "equals"
-            - Multiplication: "×" → "times"
-            - Division: "÷" → "divided by"
-
-        Notes:
-            - Preserves date-like fractions (e.g., 1/1/2024)
-            - Handles both numeric and letter variable exponents
-            - Cleans up extra whitespace after conversion
+        '8^2'  → 'acht hoch zwei'
+        '√9'   → 'Wurzel aus neun'
+        '1/2'  → 'ein halb'  (or 'eins durch zwei' for arbitrary fractions)
         """
-
-        # Fast fail if no convertible content
         if not self._contains_convertible_content(text):
             return text
 
-        # Helper function to convert numbers in matched patterns
         def convert_numbers_in_match(match: re.Match, pattern: str) -> str:
-            """
-            Convert numeric parts of a regex match to their spoken word representation.
-
-            Parameters:
-                match (re.Match): A regex match object containing numeric groups
-                pattern (str): A formatting pattern to reconstruct the matched text with converted numbers
-
-            Returns:
-                str: A string with numeric groups replaced by their spoken word equivalents
-
-            Notes:
-                - Iterates through match groups and converts digit-only groups to words
-                - Uses the instance method `_number_to_words` for number conversion
-                - Preserves non-numeric groups in their original form
-            """
             parts = list(match.groups())
             for i, part in enumerate(parts):
                 if part and part.isdigit():
                     parts[i] = self._number_to_words(int(part))
             return pattern.format(*parts)
 
-        # Convert basic arithmetic symbols first
-        text = text.replace(" = ", " equals ")
-        text = text.replace("=", " equals ")
+        # Basic arithmetic symbols — German spoken forms
+        text = text.replace(" = ", " gleich ")
+        text = text.replace("=", " gleich ")
         text = text.replace(" + ", " plus ")
         text = text.replace("+", " plus ")
         text = text.replace(" - ", " minus ")
-        text = text.replace(" × ", " times ")
-        text = text.replace("×", " times ")
-        text = text.replace(" ÷ ", " divided by ")
-        text = text.replace("÷", " divided by ")
+        text = text.replace(" × ", " mal ")
+        text = text.replace("×", " mal ")
+        text = text.replace(" ÷ ", " geteilt durch ")
+        text = text.replace("÷", " geteilt durch ")
 
-        # Convert exponents (e.g., 8^2, x^2, etc.)
+        # Exponents: 8^2 → acht hoch zwei
         text = re.sub(
             r"(\d+)\^(\d+)",
-            lambda m: convert_numbers_in_match(m, "{0} to the power of {1}"),
+            lambda m: convert_numbers_in_match(m, "{0} hoch {1}"),
             text,
         )
 
-        # Convert letter variables with exponents (e.g., x^2)
+        # Letter variables with exponents: x^2 → x hoch zwei
         text = re.sub(
             r"([a-zA-Z])\^(\d+)",
-            lambda m: f"{m.group(1)} to the power of {self._number_to_words(int(m.group(2)))}",
+            lambda m: f"{m.group(1)} hoch {self._number_to_words(int(m.group(2)))}",
             text,
         )
 
-        # Convert square roots (√)
+        # Square roots: √9 → Wurzel aus neun
         text = re.sub(
             r"√(\d+)",
-            lambda m: f"square root of {self._number_to_words(int(m.group(1)))}",
+            lambda m: f"Wurzel aus {self._number_to_words(int(m.group(1)))}",
             text,
         )
 
-        # Convert cube roots (∛)
+        # Cube roots: ∛8 → dritte Wurzel aus acht
         text = re.sub(
             r"∛(\d+)",
-            lambda m: f"cube root of {self._number_to_words(int(m.group(1)))}",
+            lambda m: f"dritte Wurzel aus {self._number_to_words(int(m.group(1)))}",
             text,
         )
 
-        # Convert mathematical fractions (only if not part of a date)
+        # Fractions (skip dates)
         def convert_fraction(match: re.Match) -> str:
-            # Skip if it looks like a date (e.g., 1/1/2024)
-            """
-            Convert a fraction match to its spoken word representation.
-
-            This method handles fraction conversion, avoiding date-like patterns and converting
-            the numerator and denominator to their word equivalents.
-
-            Parameters:
-                match (re.Match): A regex match object representing a fraction.
-
-            Returns:
-                str: A spoken word representation of the fraction, in the format "numerator over denominator".
-
-            Example:
-                "3/4" becomes "three over four"
-                "1/2" becomes "one over two"
-
-            Notes:
-                - Skips conversion for patterns that look like dates (e.g., 1/1/2024)
-                - Uses _number_to_words method to convert numeric parts to words
-            """
             if re.match(r"\d{1,2}/\d{1,2}/\d{2,4}", match.group(0)):
                 return match.group(0)
             num = self._number_to_words(int(match.group(1)))
             den = self._number_to_words(int(match.group(2)))
-            return f"{num} over {den}"
+            return f"{num} durch {den}"
 
         text = re.sub(r"(\d+)/(\d+)(?!/)", convert_fraction, text)
-
-        # Clean up any extra spaces that may have been introduced
         text = re.sub(r"\s+", " ", text).strip()
 
         return text
 
     def text_to_spoken(self, text: str) -> str:
         """
-        Convert a given text into its spoken-word equivalent.
+        Wandelt einen Text in seine gesprochene deutsche Form um.
 
-        This method processes the input text through multiple stages of transformation, including:
-        1. Expanding contractions
-        2. Normalizing quotes and punctuation
-        3. Converting titles and abbreviations
-        4. Preparing number formatting
-        5. Converting dates, mathematical notation, percentages, currency, times, years, and numbers
-
-        The conversion handles various text elements like numbers, dates, times, currency, and percentages,
-        transforming them into their spoken-word representations.
-
-        Args:
-            text (str): The input text to convert.
-
-        Returns:
-            str: The input text with numbers, dates, times, and currency converted to spoken words.
-
-        Raises:
-            ValueError: If the input text contains invalid or unsupported formats during conversion.
-
-        Notes:
-            - Preserves acronyms and special cases like "I"
-            - Handles complex number formats including large numbers and decimals
-            - Supports multiple currency symbols and percentage conversions
+        Verarbeitet:
+        - Abkürzungen (Dr., Hr., Fr., Prof.)
+        - Zahlen (27 → siebenundzwanzig)
+        - Uhrzeiten (15:00 → fünfzehn Uhr)
+        - Währungen (€10,50 → zehn Euro und fünfzig Cent)
+        - Prozentzahlen (25% → fünfundzwanzig Prozent)
+        - Mathematische Notation
+        - Jahreszahlen (1999 → neunzehnhundertneunundneunzig)
         """
-        # 1. First expand contractions (this part works correctly)
+        # 1. Expand contractions
         for contraction, expansion in sorted(self.CONTRACTIONS.items(), key=lambda x: len(x[0]), reverse=True):
             text = text.replace(contraction, expansion)
 
-        # remove leading and trailing whitespace and empty lines
+        # Remove leading/trailing whitespace per line
         text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
 
         # 2. Quote normalization
@@ -643,11 +411,10 @@ class SpokenTextConverter:
         text = text.replace("(", "«").replace(")", "»")
 
         # 3. Punctuation normalization
-        # a. Replace common punctuation marks
         for a, b in zip("、。！，：；？", ",.!,:;?", strict=False):
             text = text.replace(a, b + " ")
 
-        # b. Remove ellipses
+        # Remove ellipses
         text = re.sub(r"\.{3,}|\. \. \.", "", text)
 
         # 4. Whitespace normalization
@@ -655,146 +422,98 @@ class SpokenTextConverter:
         text = re.sub(r"  +", " ", text)
         text = re.sub(r"(?<=\n) +(?=\n)", "", text)
 
-        # 5. Convert titles and abbreviations
-        text = re.sub(r"\bD[Rr]\.(?= [A-Z])", "Doctor", text)
-        text = re.sub(r"\b(?:Mr\.|MR\.(?= [A-Z]))", "Mister", text)
-        text = re.sub(r"\b(?:Ms\.|MS\.(?= [A-Z]))", "Miss", text)
-        text = re.sub(r"\b(?:Mrs\.|MRS\.(?= [A-Z]))", "Mrs", text)
-        text = re.sub(r"\betc\.(?! [A-Z])", "etc", text)
-        text = re.sub(r"(?i)\b(y)eah?\b", r"\1e'a", text)
+        # 5. German titles and abbreviations
+        text = re.sub(r"\bDr\.(?= [A-ZÄÖÜ])", "Doktor", text)
+        text = re.sub(r"\bProf\.(?= [A-ZÄÖÜ])", "Professor", text)
+        text = re.sub(r"\bHr\.(?= [A-ZÄÖÜ])", "Herr", text)
+        text = re.sub(r"\bFr\.(?= [A-ZÄÖÜ])", "Frau", text)
+        text = re.sub(r"\busw\.(?! [A-ZÄÖÜ])", "und so weiter", text)
+        text = re.sub(r"\bzB\.?(?! [A-ZÄÖÜ])", "zum Beispiel", text)
+        text = re.sub(r"\bca\.(?! [A-ZÄÖÜ])", "circa", text)
 
-        # Convert mixed case words to lowercase unless they're acronyms
+        # Split acronyms into individual letters (but preserve German words)
         def process_word(match: re.Match) -> str:
-            """
-            Converts a matched word to its spoken form while preserving specific capitalization rules.
-
-            This method handles word conversion with special considerations:
-            - Acronyms (all uppercase words with length > 1) are split into individual letters
-            - The word "I" is preserved in its uppercase form
-            - Other words are converted to lowercase
-
-            Parameters:
-                match (re.Match): A regex match object containing the word to be processed
-
-            Returns:
-                str: The processed word according to the specified capitalization rules
-            """
             word = match.group(0)
-            # Keep uppercase if it's an acronym (all caps and length > 1)
             if word.isupper() and len(word) > 1:
-                return " ".join(word)  # Split into individual letters
-            # Special case: preserve "I" as uppercase
-            if word == "I":
-                return word
-            return word.lower()
+                return " ".join(word)
+            return word
 
-        text = re.sub(r"\b[A-Za-z]+\b", process_word, text)
+        text = re.sub(r"\b[A-ZÄÖÜ]{2,}\b", process_word, text)
 
-        # 6. Number formatting preparation
-        # Remove commas in numbers but preserve them for later conversion
+        # 6. Large numbers with thousands separators (German uses . as separator)
         def preserve_large_numbers(match: re.Match) -> str:
-            """
-            Convert a matched large number (with commas) to its spoken word representation.
-
-            Parameters:
-                match (re.Match): A regex match object containing a large number with comma separators.
-
-            Returns:
-                str: The spoken word representation of the number.
-
-            Notes:
-                - Removes commas from the matched number before conversion
-                - Uses the class's _number_to_words method to convert the number
-                - Handles large numbers by converting them to integers first
-            """
-            num = int(match.group().replace(",", ""))
+            num = int(match.group().replace(".", "").replace(",", ""))
             return self._number_to_words(num)
 
+        # Handle German-style 1.000.000 and English-style 1,000,000
+        text = re.sub(r"\b\d{1,3}(?:\.\d{3})+\b", preserve_large_numbers, text)
         text = re.sub(r"\b\d{1,3}(?:,\d{3})+\b", preserve_large_numbers, text)
-        text = re.sub(r"(?<=\d),(?=\d)", "", text)
 
-        # 7. Remove AM/PM but preserve the time part
-        # text = re.sub(r"(\d+:\d+)\s*(?:am|pm)\b", r"\1", text, flags=re.IGNORECASE)
-
-        # 8. Date conversion (before other number conversions)
+        # 7. Date conversion — German format DD.MM.YYYY
         def convert_date(match: re.Match) -> str:
-            """
-            Convert a date match object into its spoken-word representation.
-
-            This method handles date formatting by converting numeric date components
-            (month, day, year) into their spoken-word equivalents. It supports two primary
-            formats:
-            - Standard date format with a 4-digit year (MM/DD/YYYY)
-            - Shorter date formats with 2-digit components
-
-            Parameters:
-                match (re.Match): A regex match object containing a date string
-
-            Returns:
-                str: A spoken-word representation of the date, with numeric components
-                     converted to words
-
-            Examples:
-                - "12/25/2000" → "twelve/twenty-five/two thousand"
-                - "1/1/23" → "one/one/twenty-three"
-            """
-            parts = match.group().split("/")
+            parts = match.group().split(".")
             if len(parts) == 3 and len(parts[2]) == 4:
-                # Convert the year part separately
                 year = int(parts[2])
                 if year == 2000:
-                    year_text = "two thousand"
+                    year_text = "zweitausend"
+                elif year >= 2001:
+                    left, right = divmod(year, 100)
+                    year_text = "zweitausend" + (self._number_to_words(right) if right else "")
                 else:
                     left, right = divmod(year, 100)
                     if right == 0:
-                        year_text = f"{self._number_to_words(left)} hundred"
+                        year_text = f"{self._number_to_words(left)}hundert"
                     else:
-                        year_text = f"{self._number_to_words(left)} {self._number_to_words(right)}"
-                return f"{self._number_to_words(int(parts[0]))}/{self._number_to_words(int(parts[1]))}/{year_text}"
-            return "/".join(self._number_to_words(int(part)) for part in parts)
+                        year_text = f"{self._number_to_words(left)}hundert{self._number_to_words(right)}"
+                return (
+                    f"{self._number_to_words(int(parts[0]))}ten "
+                    f"{self._number_to_words(int(parts[1]))}ten "
+                    f"{year_text}"
+                )
+            return ".".join(self._number_to_words(int(part)) for part in parts if part)
 
-        text = re.sub(r"\b\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})\b", convert_date, text)
+        # German date format: DD.MM.YYYY
+        text = re.sub(r"\b\d{1,2}\.\d{1,2}\.(?:\d{4}|\d{2})\b", convert_date, text)
 
-        # 9. Convert mathematical notation (before other number conversions)
+        # Also handle slash-separated dates
+        def convert_slash_date(match: re.Match) -> str:
+            parts = match.group().split("/")
+            return "/".join(self._number_to_words(int(p)) for p in parts)
+
+        text = re.sub(r"\b\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})\b", convert_slash_date, text)
+
+        # 8. Mathematical notation
         text = self._convert_mathematical_notation(text)
 
-        # 10. Number conversions in specific order:
-        # a. Percentages first
+        # 9. Number conversions in order:
+        # a. Percentages
         text = self._convert_percentages(text)
 
-        # b. Currency
+        # b. Currency (€, $, £)
         text = re.sub(
-            r"(?i)[$£]\d+(?:\.\d+)?(?: hundred| thousand| (?:[bm]|tr)illion)*\b|[$£]\d+\.\d\d?\b",
+            r"(?i)[€$£]\d+(?:\.\d+)?(?: hundred| thousand| (?:[bm]|tr)illion)*\b|[€$£]\d+[.,]\d\d?\b",
             self._flip_money,
             text,
         )
 
-        # c. Times
-        text = re.sub(r"\b(\d{1,2}):(\d{2})(?:\s*(?:am|pm))?\b", self._split_num, text, flags=re.IGNORECASE)
+        # c. Times (24h format common in German)
+        text = re.sub(r"\b(\d{1,2}):(\d{2})\b", self._split_num, text)
 
-        # d. Years - The key fix is to use lambda to return string directly
+        # d. Years (4-digit, optionally followed by "er" for decades like "1990er")
         text = re.sub(
-            r"\b\d{4}s?\b",
+            r"\b\d{4}(?:er)?\b",
             lambda m: self._split_num(m),
             text,
         )
 
-        # e. Decimal numbers
+        # e. Decimal numbers (German uses comma, but handle dot too)
         text = re.sub(r"\d*\.\d+", self._point_num, text)
 
-        # f. Standalone integers (new addition)
+        # f. Standalone integers
         text = re.sub(r"\b\d+\b", lambda m: self._number_to_words(int(m.group())), text)
 
         # 10. Final formatting
-        text = re.sub(r"(?<=\d)-(?=\d)", " to ", text)
-        text = re.sub(r"(?<=\d)S", " S", text)
-        text = re.sub(r"(?<=[BCDFGHJ-NP-TV-Z])'?s\b", "'S", text)
-        text = re.sub(r"(?<=X')S\b", "s", text)
-        text = re.sub(r"(?:[A-Za-z]\.){2,} [a-z]", lambda m: m.group().replace(".", "-"), text)
-        text = re.sub(r"(?i)(?<=[A-Z])\.(?=[A-Z])", "-", text)
-
-        # 11. Final cleanup
-        # text = re.sub(r"\b(?:am|pm)\b", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"  +", " ", text)  # Clean up any double spaces that may have been created
+        text = re.sub(r"(?<=\d)-(?=\d)", " bis ", text)   # ranges: 3-5 → drei bis fünf
+        text = re.sub(r"  +", " ", text)
 
         return text.strip()
